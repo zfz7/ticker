@@ -22,7 +22,7 @@ export class LambdaStack extends cdk.Stack {
     });
 
     const eventRule = new Rule(this, 'scheduleRule', {
-      schedule: Schedule.expression('cron(30 15-20 ? * MON-FRI *)'),
+      schedule: Schedule.expression('cron(5 15-20 ? * MON-FRI *)'),
     });
     eventRule.addTarget(new LambdaFunction(lambda));
   }

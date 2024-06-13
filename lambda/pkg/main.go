@@ -39,29 +39,44 @@ func runTicker(finnhubClient *finnhub.DefaultApiService, pushoverClient *pushove
 
 	var title strings.Builder
 	var message strings.Builder
-
+	marketDown := true
 	for idx, ticker := range tickers {
 		quote, _, err := finnhubClient.Quote(context.Background()).Symbol(ticker).Execute()
 		if err != nil {
 			return "", err
 		}
 		if idx == 0 && *quote.Dp > 0 {
-			fmt.Fprintf(&title, "Market: UP")
+			marketDown = false
+			fmt.Fprintf(&title, "Market: ▲,")
 		} else if idx == 0 && *quote.Dp < 0 {
-			fmt.Fprintf(&title, "Market: DOWN")
+			marketDown = true
+			fmt.Fprintf(&title, "Market: ▼,")
 		}
-		fmt.Fprintf(&message, "%v: %v$, %%\u0394: %2.2f, $\u0394: %v\n", ticker, *quote.C, *quote.Dp, *quote.D)
+		fmt.Fprintf(&message, "%v: %v$, %+2.2f%%, %+.2f$\n", ticker, *quote.C, *quote.Dp, *quote.D)
 	}
-
 	easternTime, _ := time.LoadLocation("America/New_York")
 	now := time.Now().In(easternTime)
 	marketClose := time.Date(now.Year(), now.Month(), now.Day(), 16, 30, 0, 0, easternTime)
-
 	duration := marketClose.Sub(now).Truncate(time.Minute)
-	fmt.Fprintf(&title, ", cls in %v", duration)
+
+	marketStatus, _, _ := finnhubClient.MarketStatus(context.Background()).Exchange("US").Execute()
+	if *marketStatus.IsOpen {
+		fmt.Fprintf(&title, " open for %v", duration)
+	} else {
+		fmt.Fprintf(&title, " closed")
+	}
 
 	recipient := pushover.NewRecipient(os.Getenv(PUSHOVER_RECIPIENT))
-	messageRequest := pushover.NewMessageWithTitle(message.String(), title.String())
+	messageRequest := &pushover.Message{
+		Message: message.String(),
+		Title:   title.String(),
+	}
+	if marketDown && *marketStatus.IsOpen && duration <= time.Hour {
+		messageRequest.Priority = pushover.PriorityEmergency
+		messageRequest.Retry = 5 * time.Minute
+		messageRequest.Expire = time.Hour
+		messageRequest.Sound = pushover.SoundMechanical
+	}
 	_, err := pushoverClient.SendMessage(messageRequest, recipient)
 	if err != nil {
 		return "", err
