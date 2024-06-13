@@ -1,9 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Architecture, Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
-import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
+import { Rule, RuleTargetInput, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
-import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 
 export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -24,6 +23,6 @@ export class LambdaStack extends cdk.Stack {
     const eventRule = new Rule(this, 'scheduleRule', {
       schedule: Schedule.expression('cron(5 15-20 ? * MON-FRI *)'),
     });
-    eventRule.addTarget(new LambdaFunction(lambda));
+    eventRule.addTarget(new LambdaFunction(lambda, { event: RuleTargetInput.fromObject({}) }));
   }
 }

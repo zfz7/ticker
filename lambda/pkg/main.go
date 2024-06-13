@@ -68,8 +68,9 @@ func runTicker(finnhubClient *finnhub.DefaultApiService, pushoverClient *pushove
 
 	recipient := pushover.NewRecipient(os.Getenv(PUSHOVER_RECIPIENT))
 	messageRequest := &pushover.Message{
-		Message: message.String(),
-		Title:   title.String(),
+		Message:  message.String(),
+		Title:    title.String(),
+		Priority: pushover.PriorityNormal,
 	}
 	if marketDown && *marketStatus.IsOpen && duration <= time.Hour {
 		messageRequest.Priority = pushover.PriorityEmergency
