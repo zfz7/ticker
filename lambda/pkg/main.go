@@ -67,7 +67,7 @@ func runTicker(finnhubClient *finnhub.DefaultApiService, pushoverClient *pushove
 	}
 
 	recipient := pushover.NewRecipient(os.Getenv(PUSHOVER_RECIPIENT))
-	messageRequest := &pushover.Message{
+	messageRequest := pushover.Message{
 		Message:  message.String(),
 		Title:    title.String(),
 		Priority: pushover.PriorityNormal,
@@ -78,7 +78,7 @@ func runTicker(finnhubClient *finnhub.DefaultApiService, pushoverClient *pushove
 		messageRequest.Expire = time.Hour
 		messageRequest.Sound = pushover.SoundMechanical
 	}
-	_, err := pushoverClient.SendMessage(messageRequest, recipient)
+	_, err := pushoverClient.SendMessage(&messageRequest, recipient)
 	if err != nil {
 		return "", err
 	}
