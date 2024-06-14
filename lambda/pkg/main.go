@@ -56,12 +56,12 @@ func runTicker(finnhubClient *finnhub.DefaultApiService, pushoverClient *pushove
 	}
 	easternTime, _ := time.LoadLocation("America/New_York")
 	now := time.Now().In(easternTime)
-	marketClose := time.Date(now.Year(), now.Month(), now.Day(), 16, 30, 0, 0, easternTime)
-	duration := marketClose.Sub(now).Truncate(time.Minute)
+	marketClose := time.Date(now.Year(), now.Month(), now.Day(), 16, 00, 0, 0, easternTime)
+	timeTillClose := marketClose.Sub(now).Truncate(time.Minute)
 
 	marketStatus, _, _ := finnhubClient.MarketStatus(context.Background()).Exchange("US").Execute()
 	if *marketStatus.IsOpen {
-		fmt.Fprintf(&title, " open for %v", duration)
+		fmt.Fprintf(&title, " open for %v", timeTillClose)
 	} else {
 		fmt.Fprintf(&title, " closed")
 	}
@@ -72,7 +72,7 @@ func runTicker(finnhubClient *finnhub.DefaultApiService, pushoverClient *pushove
 		Title:    title.String(),
 		Priority: pushover.PriorityNormal,
 	}
-	if marketDown && *marketStatus.IsOpen && duration <= time.Hour {
+	if marketDown && *marketStatus.IsOpen && timeTillClose <= time.Hour {
 		messageRequest.Priority = pushover.PriorityEmergency
 		messageRequest.Retry = 5 * time.Minute
 		messageRequest.Expire = time.Hour
