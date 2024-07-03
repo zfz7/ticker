@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/gregdel/pushover"
 	"lambda/pkg/apis"
 	"lambda/pkg/service"
 	"os"
@@ -27,21 +26,11 @@ func router(ctx context.Context, req map[string]string) (string, error) {
 	}
 
 	gptApi := apis.NewChatGptApi()
-	gptRes, err := gptApi.GenerateMessageToWife()
-	if err != nil {
-		return err.Error(), err
-	}
-	messageRequest := pushover.Message{
-		Message:  gptRes,
-		Title:    "I lovee you",
-		Priority: pushover.PriorityNormal,
-	}
 	wifeNotificationApi := apis.NewNotificationApi(os.Getenv(WIFE_RECIPIENT))
-	_, err = wifeNotificationApi.Send(&messageRequest)
-	if err != nil {
-		return err.Error(), err
-	}
-	_, err = notificationApi.Send(&messageRequest)
+	notificationApis := []apis.NotificationApi{notificationApi, wifeNotificationApi}
+	aiService := service.NewAiService(notificationApis, gptApi)
+
+	gptRes, err := aiService.GenerateMessageToWife()
 	if err != nil {
 		return err.Error(), err
 	}
