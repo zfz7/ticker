@@ -6,6 +6,7 @@ import (
 	"lambda/pkg/apis"
 	"lambda/pkg/service"
 	"os"
+	"time"
 )
 
 const PUSHOVER_RECIPIENT = "PUSHOVER_RECIPIENT"
@@ -29,6 +30,10 @@ func router(ctx context.Context, req map[string]string) (string, error) {
 	wifeNotificationApi := apis.NewNotificationApi(os.Getenv(WIFE_RECIPIENT))
 	notificationApis := []apis.NotificationApi{notificationApi, wifeNotificationApi}
 	aiService := service.NewAiService(notificationApis, gptApi)
+	now := time.Now()
+	if now.Hour() != 12 {
+		return output, nil
+	}
 
 	gptRes, err := aiService.GenerateMessageToWife()
 	if err != nil {
